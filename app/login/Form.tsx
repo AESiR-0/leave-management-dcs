@@ -4,14 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
@@ -36,54 +29,56 @@ export default function LoginPage() {
     if (res?.error) {
       setError("Invalid username or password");
     } else {
-      router.push("/dashboard"); // Redirect on successful login
+      router.push("/home");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-300">
-      <div className="w-full py-20 max-w-md space-y-6 bg-white p-8 shadow-md rounded-lg">
-        <Card>
-          <CardContent>
-            {error && (
-              <div className="text-sm text-red-500 text-center">{error}</div>
-            )}
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label htmlFor="username" className="block py-3 text-gray-700">
-                  Username
-                </label>
-                <Input
-                  type="text"
-                  id="username"
-                  name="username"
-                  placeholder="Enter your username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block py-3 text-gray-700">
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full bg-gray-800 text-white">
-                Login
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <Card className="max-w-md w-full shadow-md">
+        <CardHeader>
+          <CardTitle className="text-center text-xl font-bold">Login</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && <p className="text-red-500 text-center">{error}</p>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-gray-700 mb-2">
+                Username
+              </label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Enter your username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-gray-700 mb-2">
+                Password
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Login
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

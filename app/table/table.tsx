@@ -54,22 +54,31 @@ export default function LeaveRequestsTable() {
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState<string>("");
 
-  // Handle bulk action change (approve/reject)
-  const handleBulkActionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setBulkAction(e.target.value);
+  // Handle bulk action selection
+  const handleBulkActionChange = (value: string) => {
+    setBulkAction(value);
   };
 
+  // Handle bulk action submit
   const handleBulkActionSubmit = () => {
-    const updatedRequests = requests.map((request) =>
-      selectedRequests.includes(request.id)
-        ? {
-            ...request,
-            status: bulkAction === "approve" ? "approved" : "rejected",
-          }
-        : request
-    );
-    setRequests(updatedRequests);
-  };
+      if (!bulkAction) {
+        alert("Please select a bulk action.");
+        return;
+      }
+  
+      const updatedRequests = requests.map((request) =>
+        selectedRequests.includes(request.id)
+          ? {
+              ...request,
+              status: bulkAction === "approve" ? "approved" : "rejected",
+            }
+          : request
+      ) as LeaveRequest[];
+  
+      setRequests(updatedRequests);
+      setSelectedRequests([]); // Clear selections after applying
+      setBulkAction(""); // Reset bulk action
+    };
 
   // Toggle selection for a request
   const handleSelectRequest = (id: number) => {
@@ -82,13 +91,13 @@ export default function LeaveRequestsTable() {
 
   // Handle approve/reject for individual request
   const handleApproveReject = (id: number, action: "approve" | "reject") => {
-    const updatedRequests = requests.map((request) =>
-      request.id === id
-        ? { ...request, status: action === "approve" ? "approved" : "rejected" }
-        : request
-    );
-    setRequests(updatedRequests);
-  };
+      const updatedRequests = requests.map((request) =>
+        request.id === id
+          ? { ...request, status: action === "approve" ? "approved" : "rejected" }
+          : request
+      ) as LeaveRequest[];
+      setRequests(updatedRequests);
+    };
 
   // Handle details button click (could open a modal or redirect)
   const handleDetailsClick = (id: number) => {
@@ -100,7 +109,7 @@ export default function LeaveRequestsTable() {
     <div className="p-6 max-w-screen-xl mx-auto space-y-6">
       {/* Bulk Actions */}
       <div className="flex items-center space-x-4 mb-6">
-        <Select value={bulkAction} onChange={handleBulkActionChange}>
+        <Select value={bulkAction} onValueChange={handleBulkActionChange}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Select action" />
           </SelectTrigger>
@@ -111,7 +120,7 @@ export default function LeaveRequestsTable() {
         </Select>
         <Button
           onClick={handleBulkActionSubmit}
-          disabled={selectedRequests.length === 0}
+          disabled={selectedRequests.length === 0 || !bulkAction}
           className="bg-blue-600 text-white"
         >
           Apply Bulk Action
@@ -132,6 +141,10 @@ export default function LeaveRequestsTable() {
                     setSelectedRequests([]);
                   }
                 }}
+                checked={
+                  selectedRequests.length > 0 &&
+                  selectedRequests.length === requests.length
+                }
               />
             </th>
             <th className="px-4 py-2">Name</th>

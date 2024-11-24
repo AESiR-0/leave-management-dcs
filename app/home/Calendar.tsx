@@ -23,7 +23,6 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Sample backend data (replace with actual API data)
   const sampleEvents: Event[] = [
     { date: "2024-11-05", description: "Holiday" },
     { date: "2024-11-12", description: "Leave" },
@@ -31,7 +30,6 @@ export default function CalendarPage() {
     { date: "2024-11-25", description: "Conference" },
   ];
 
-  // Update the events state to show only the events in the current month
   useEffect(() => {
     const filteredEvents = sampleEvents.filter((event) => {
       const eventDate = parseISO(event.date);
@@ -51,48 +49,41 @@ export default function CalendarPage() {
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const handlePreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
-  // Toggle the event view when a date is clicked
   const handleDateClick = (day: Date) => {
-    if (selectedDate && isSameDay(day, selectedDate)) {
-      setSelectedDate(null); // Deselect the date if it's already selected
-    } else {
-      setSelectedDate(day); // Select the new date
-    }
+    setSelectedDate((prevDate) =>
+      prevDate && isSameDay(day, prevDate) ? null : day
+    );
   };
 
-  // Get the events for the selected date
   const selectedDayEvents = selectedDate
     ? events.filter((event) => isSameDay(parseISO(event.date), selectedDate))
     : [];
 
   return (
-    <div className="flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8 w-full max-w-screen-lg mx-auto">
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between w-full mb-4">
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <button
           onClick={handlePreviousMonth}
-          className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none"
+          className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
         >
           Previous
         </button>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold">
           {format(currentMonth, "MMMM yyyy")}
         </h2>
         <button
           onClick={handleNextMonth}
-          className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none"
+          className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
         >
           Next
         </button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2 w-full mb-4">
+      {/* Calendar */}
+      <div className="grid grid-cols-7 gap-2">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div
-            key={day}
-            className="py-2 text-center font-medium text-gray-600 bg-gray-100 rounded-md"
-          >
+          <div key={day} className="text-center text-gray-600 font-medium py-1">
             {day}
           </div>
         ))}
@@ -100,57 +91,44 @@ export default function CalendarPage() {
           const hasEvent = events.some((event) =>
             isSameDay(parseISO(event.date), day)
           );
-          const dayEvents = events.filter((event) =>
-            isSameDay(parseISO(event.date), day)
-          );
           return (
             <div
               key={day.toISOString()}
-              className={clsx(
-                "group relative flex flex-col items-center justify-center h-20 border border-gray-200 rounded-md cursor-pointer",
-                hasEvent ? "bg-yellow-100" : "bg-white hover:bg-gray-50"
-              )}
               onClick={() => handleDateClick(day)}
+              className={clsx(
+                "h-20 flex items-center justify-center border rounded-md cursor-pointer",
+                hasEvent ? "bg-blue-100" : "bg-gray-100",
+                selectedDate && isSameDay(day, selectedDate)
+                  ? "ring-2 ring-blue-500"
+                  : "hover:bg-gray-200"
+              )}
             >
-              <span className="text-sm text-gray-800">{format(day, "d")}</span>
-              {/* Add Dot Indicator for Events */}
-              {hasEvent && (
-                <div className="w-2 h-2 mt-2 rounded-full bg-blue-600"></div>
-              )}
-              {/* Hover Tooltip for Events */}
-              {hasEvent && (
-                <div className="absolute hidden group-hover:block bottom-12 left-1/2 transition-all transform -translate-x-1/2 p-2 bg-white border border-gray-200 rounded-md shadow-lg text-gray-800 text-xs">
-                  <ul className="space-y-1">
-                    {dayEvents.map((event, index) => (
-                      <li key={index}>
-                        <strong>{event.description}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <span>{format(day, "d")}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Events List for the selected day */}
-      {selectedDate && selectedDayEvents.length > 0 && (
-        <div className="w-full mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Events for {format(selectedDate, "MMM d, yyyy")}:
+      {/* Selected Day Events */}
+      {selectedDate && (
+        <div>
+          <h3 className="text-lg font-semibold">
+            Events for {format(selectedDate, "MMMM d, yyyy")}:
           </h3>
-          <ul className="space-y-2">
-            {selectedDayEvents.map((event, index) => (
-              <li
-                key={index}
-                className="p-4 border rounded-md bg-gray-50 text-gray-800"
-              >
-                <strong>{format(parseISO(event.date), "MMM d, yyyy")}: </strong>
-                {event.description}
-              </li>
-            ))}
-          </ul>
+          {selectedDayEvents.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {selectedDayEvents.map((event, index) => (
+                <li
+                  key={index}
+                  className="p-3 bg-white shadow rounded-md border"
+                >
+                  {event.description}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-gray-600">No events for this day.</p>
+          )}
         </div>
       )}
     </div>
