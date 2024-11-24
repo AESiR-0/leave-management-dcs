@@ -5,9 +5,8 @@ import { useState, useEffect } from "react";
 // Predefined leave categories
 const leaveCategories = [
   "Sick Leave",
-  "Casual Leave",
-  "Annual Leave",
-  "Maternity Leave",
+  "Promotional for university",
+  "Event Leave",
 ];
 
 export default function LeaveForm() {
@@ -53,10 +52,36 @@ export default function LeaveForm() {
     }
   }, [startDate, endDate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic (e.g., send data to backend)
-    console.log({ leaveCategory, startDate, endDate, numDays, reason });
+
+    // Prepare leave request data
+    const leaveRequestData = {
+      leaveCategory,
+      startDate,
+      endDate,
+      numDays,
+      reason,
+    };
+
+    try {
+      // Send the data to the backend API for saving in MongoDB
+      const response = await fetch("/api/leave-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(leaveRequestData),
+      });
+
+      if (response.ok) {
+        console.log("Leave request submitted successfully");
+      } else {
+        console.error("Failed to submit leave request");
+      }
+    } catch (error) {
+      console.error("Error submitting leave request:", error);
+    }
   };
 
   return (

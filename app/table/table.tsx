@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button"; // Assuming Shadcn button component is available
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Shadcn Select component
+} from "@/components/ui/select";
 
 type LeaveRequest = {
-  id: number;
+  _id: string;
   name: string;
   course: string;
   semester: number;
@@ -21,38 +21,19 @@ type LeaveRequest = {
 };
 
 export default function LeaveRequestsTable() {
-  const [requests, setRequests] = useState<LeaveRequest[]>([
-    {
-      id: 1,
-      name: "John Doe",
-      course: "Computer Science",
-      semester: 5,
-      contact: "123-456-7890",
-      leaveCategory: "Sick Leave",
-      status: "pending",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      course: "Mechanical Engineering",
-      semester: 3,
-      contact: "987-654-3210",
-      leaveCategory: "Casual Leave",
-      status: "pending",
-    },
-    {
-      id: 3,
-      name: "Sam Brown",
-      course: "Electrical Engineering",
-      semester: 7,
-      contact: "555-123-4567",
-      leaveCategory: "Annual Leave",
-      status: "approved",
-    },
-  ]);
-
-  const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<string>("");
+
+  // Fetch leave requests from API
+  useEffect(() => {
+    const fetchRequests = async () => {
+      const response = await fetch("/api/leave-requests");
+      const data = await response.json();
+      setRequests(data);
+    };
+    fetchRequests();
+  }, []);
 
   // Handle bulk action selection
   const handleBulkActionChange = (value: string) => {
@@ -60,28 +41,34 @@ export default function LeaveRequestsTable() {
   };
 
   // Handle bulk action submit
-  const handleBulkActionSubmit = () => {
-      if (!bulkAction) {
-        alert("Please select a bulk action.");
-        return;
-      }
-  
-      const updatedRequests = requests.map((request) =>
-        selectedRequests.includes(request.id)
-          ? {
-              ...request,
-              status: bulkAction === "approve" ? "approved" : "rejected",
-            }
-          : request
-      ) as LeaveRequest[];
-  
-      setRequests(updatedRequests);
-      setSelectedRequests([]); // Clear selections after applying
-      setBulkAction(""); // Reset bulk action
-    };
+  const handleBulkActionSubmit = async () => {
+    if (!bulkAction) {
+      alert("Please select a bulk action.");
+      return;
+    }
+
+    const response = await fetch("/api/leave-requests/bulk", {
+      method: "PATCH",
+      body: JSON.stringify({ selectedRequests, status: bulkAction }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await response.json();
+    if (data.message === "Bulk action applied successfully") {
+      setRequests((prev) =>
+        prev.map((request) =>
+          selectedRequests.includes(request._id)
+            ? { ...request, status: bulkAction as "approved" | "rejected" }
+            : request
+        )
+      );
+    }
+    setSelectedRequests([]);
+    setBulkAction("");
+  };
 
   // Toggle selection for a request
-  const handleSelectRequest = (id: number) => {
+  const handleSelectRequest = (id: string) => {
     setSelectedRequests((prevSelected) =>
       prevSelected.includes(id)
         ? prevSelected.filter((selectedId) => selectedId !== id)
@@ -90,19 +77,29 @@ export default function LeaveRequestsTable() {
   };
 
   // Handle approve/reject for individual request
-  const handleApproveReject = (id: number, action: "approve" | "reject") => {
-      const updatedRequests = requests.map((request) =>
-        request.id === id
-          ? { ...request, status: action === "approve" ? "approved" : "rejected" }
-          : request
-      ) as LeaveRequest[];
-      setRequests(updatedRequests);
-    };
+  const handleApproveReject = async (
+    id: string,
+    action: "approve" | "reject"
+  ) => {
+    const response = await fetch(`/api/leave-requests/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: action }),
+      headers: { "Content-Type": "application/json" },
+    });
 
-  // Handle details button click (could open a modal or redirect)
-  const handleDetailsClick = (id: number) => {
-    console.log("Open details for request ID:", id);
-    // You can implement your modal or page navigation logic here
+    const data = await response.json();
+    if (data.message === "Status updated successfully") {
+      setRequests((prev) =>
+        prev.map((request) =>
+          request._id === id
+            ? {
+                ...request,
+                status: action === "approve" ? "approved" : "rejected",
+              }
+            : request
+        )
+      );
+    }
   };
 
   return (
@@ -131,12 +128,12 @@ export default function LeaveRequestsTable() {
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr className="bg-gray-100">
-            <th className="px-4 py-2 text-left">
+            <th className="px-4 py-2">
               <input
                 type="checkbox"
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setSelectedRequests(requests.map((request) => request.id));
+                    setSelectedRequests(requests.map((request) => request._id));
                   } else {
                     setSelectedRequests([]);
                   }
@@ -154,17 +151,16 @@ export default function LeaveRequestsTable() {
             <th className="px-4 py-2">Leave Category</th>
             <th className="px-4 py-2">Status</th>
             <th className="px-4 py-2">Action</th>
-            <th className="px-4 py-2">Details</th>
           </tr>
         </thead>
         <tbody>
           {requests.map((request) => (
-            <tr key={request.id} className="border-b">
+            <tr key={request._id} className="border-b">
               <td className="px-4 py-2">
                 <input
                   type="checkbox"
-                  checked={selectedRequests.includes(request.id)}
-                  onChange={() => handleSelectRequest(request.id)}
+                  checked={selectedRequests.includes(request._id)}
+                  onChange={() => handleSelectRequest(request._id)}
                 />
               </td>
               <td className="px-4 py-2">{request.name}</td>
@@ -188,24 +184,16 @@ export default function LeaveRequestsTable() {
               </td>
               <td className="px-4 py-2">
                 <Button
-                  onClick={() => handleApproveReject(request.id, "approve")}
+                  onClick={() => handleApproveReject(request._id, "approve")}
                   className="bg-green-600 text-white"
                 >
                   Approve
                 </Button>
                 <Button
-                  onClick={() => handleApproveReject(request.id, "reject")}
+                  onClick={() => handleApproveReject(request._id, "reject")}
                   className="bg-red-600 text-white ml-2"
                 >
                   Reject
-                </Button>
-              </td>
-              <td className="px-4 py-2">
-                <Button
-                  onClick={() => handleDetailsClick(request.id)}
-                  className="bg-blue-600 text-white"
-                >
-                  View Details
                 </Button>
               </td>
             </tr>
